@@ -105,7 +105,7 @@ class Decoder {
     switch (p.type) {
       case c.PARENT.TAG:
         this._push(
-          this._createTag(p.ref[0], p.ref[1])
+          this.createTag(p.ref[0], p.ref[1])
         )
         break
       case c.PARENT.BYTE_STRING:
@@ -115,10 +115,19 @@ class Decoder {
         this._push(new Buffer(p.ref))
         break
       case c.PARENT.MAP:
+        if (p.values % 2 > 0) {
+          throw new Error('Odd number of elements in the map')
+        }
+        this._push(this.createMap(p.ref))
+        break
       case c.PARENT.OBJECT:
         if (p.values % 2 > 0) {
           throw new Error('Odd number of elements in the map')
         }
+        this._push(this.createObject(p.ref))
+        break
+      case c.PARENT.ARRAY:
+        this._push(this.createArray(p.ref))
         break
       default:
         break
@@ -127,16 +136,6 @@ class Decoder {
     if (this._currentParent && this._currentParent.type === c.PARENT.TAG) {
       this._dec()
     }
-  }
-
-  _createTag (tagNumber, value) {
-    const typ = this._knownTags[tagNumber]
-
-    if (!typ) {
-      return new Tagged(tagNumber, value)
-    }
-
-    return typ(value)
   }
 
   // Reduce the expected length of the current parent by one
@@ -209,7 +208,6 @@ class Decoder {
 
   // Create a new parent in the parents list
   _createParent (obj, type, len) {
-    this._push(obj, true)
     this._parents[this._depth] = {
       type: type,
       length: len,
@@ -232,6 +230,27 @@ class Decoder {
   }
 
   // -- Interface to customize deoding behaviour
+  createTag (tagNumber, value) {
+    const typ = this._knownTags[tagNumber]
+
+    if (!typ) {
+      return new Tagged(tagNumber, value)
+    }
+
+    return typ(value)
+  }
+
+  createMap (obj) {
+    return obj
+  }
+
+  createObject (obj) {
+    return obj
+  }
+
+  createArray (arr) {
+    return arr
+  }
 
   createByteString (start, end) {
     if (start === end) {
@@ -324,10 +343,6 @@ class Decoder {
 
   createSimpleUnassigned (val) {
     return new Simple(val)
-  }
-
-  createTagUnassigned (tagNumber) {
-    return this._createTag(tagNumber)
   }
 
   // -- Interface for decoder.asm.js
@@ -481,7 +496,7 @@ class Decoder {
   }
 
   pushTagUnassigned (tagNumber) {
-    this._push(this.createTagUnassigned(tagNumber))
+    this._push(this.createTag(tagNumber))
   }
 
   pushBreak () {
@@ -493,21 +508,11 @@ class Decoder {
   }
 
   _createObjectStartFixed (len) {
-    if (len === 0) {
-      this._push({})
-      return
-    }
-
     this._createParent({}, c.PARENT.OBJECT, len)
   }
 
   _createArrayStartFixed (len) {
-    if (len === 0) {
-      this._push([])
-      return
-    }
-
-    this._createParent(new Array(len), c.PARENT.ARRAY, len)
+    this._createParent([], c.PARENT.ARRAY, len)
   }
 
   _decode (input) {

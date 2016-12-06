@@ -25,7 +25,7 @@ function failAll (list) {
 }
 
 describe('Diagnose', () => {
-  it.only('diagnose', () => testAll(cases.good))
+  it('diagnose', () => testAll(cases.good))
   it('decode', () => testAll(cases.decodeGood))
   it('edges', () => failAll(cases.decodeBad))
 })
