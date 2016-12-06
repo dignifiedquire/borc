@@ -233,81 +233,167 @@ class Decoder {
 
   // -- Interface to customize deoding behaviour
 
-  pushInt (val) {
-    this._push(val)
+  createByteString (start, end) {
+    if (start === end) {
+      return new Buffer(0)
+    }
+
+    return new Uint8Array(this._heap.slice(start, end))
   }
 
-  pushInt32 (f, g) {
-    this._push(utils.buildInt32(f, g))
+  createInt (val) {
+    return val
   }
 
-  pushInt64 (f1, f2, g1, g2) {
-    this._push(utils.buildInt64(f1, f2, g1, g2))
+  createInt32 (f, g) {
+    return utils.buildInt32(f, g)
   }
 
-  pushFloat (val) {
-    this._push(val)
+  createInt64 (f1, f2, g1, g2) {
+    return utils.buildInt64(f1, f2, g1, g2)
   }
 
-  pushFloatSingle (a, b, c, d) {
-    this._push(
-      ieee754.read([a, b, c, d], 0, false, 23, 4)
-    )
+  createFloat (val) {
+    return val
   }
 
-  pushFloatDouble (a, b, c, d, e, f, g, h) {
-    this._push(
-      ieee754.read([a, b, c, d, e, f, g, h], 0, false, 52, 8)
-    )
+  createFloatSingle (a, b, c, d) {
+    return ieee754.read([a, b, c, d], 0, false, 23, 4)
   }
 
-  pushInt32Neg (f, g) {
-    this._push(-1 - utils.buildInt32(f, g))
+  createFloatDouble (a, b, c, d, e, f, g, h) {
+    return ieee754.read([a, b, c, d, e, f, g, h], 0, false, 52, 8)
   }
 
-  pushInt64Neg (f1, f2, g1, g2) {
+  createInt32Neg (f, g) {
+    return -1 - utils.buildInt32(f, g)
+  }
+
+  createInt64Neg (f1, f2, g1, g2) {
     const f = utils.buildInt32(f1, f2)
     const g = utils.buildInt32(g1, g2)
 
     if (f > c.MAX_SAFE_HIGH) {
-      this._push(
-        c.NEG_ONE.sub(new Bignumber(f).times(c.SHIFT32).plus(g))
-      )
-    } else {
-      this._push(-1 - ((f * c.SHIFT32) + g))
+      return c.NEG_ONE.sub(new Bignumber(f).times(c.SHIFT32).plus(g))
     }
+
+    return -1 - ((f * c.SHIFT32) + g)
+  }
+
+  createTrue () {
+    return true
+  }
+
+  createFalse () {
+    return false
+  }
+
+  createNull () {
+    return null
+  }
+
+  createUndefined () {
+    return void 0
+  }
+
+  createInfinity () {
+    return Infinity
+  }
+
+  createInfinityNeg () {
+    return -Infinity
+  }
+
+  createNaN () {
+    return NaN
+  }
+
+  createNaNNeg () {
+    return -NaN
+  }
+
+  createUtf8String (start, end) {
+    if (start === end) {
+      return ''
+    }
+
+    return (
+      new Buffer(this._heap.slice(start, end))
+    ).toString('utf8')
+  }
+
+  createSimpleUnassigned (val) {
+    return new Simple(val)
+  }
+
+  createTagUnassigned (tagNumber) {
+    return this._createTag(tagNumber)
+  }
+
+  // -- Interface for decoder.asm.js
+
+  pushInt (val) {
+    this._push(this.createInt(val))
+  }
+
+  pushInt32 (f, g) {
+    this._push(this.createInt32(f, g))
+  }
+
+  pushInt64 (f1, f2, g1, g2) {
+    this._push(this.createInt64(f1, f2, g1, g2))
+  }
+
+  pushFloat (val) {
+    this._push(this.createFloat(val))
+  }
+
+  pushFloatSingle (a, b, c, d) {
+    this._push(this.createFloatSingle(a, b, c, d))
+  }
+
+  pushFloatDouble (a, b, c, d, e, f, g, h) {
+    this._push(this.createFloatDouble(a, b, c, d, e, f, g, h))
+  }
+
+  pushInt32Neg (f, g) {
+    this._push(this.createInt32Neg(f, g))
+  }
+
+  pushInt64Neg (f1, f2, g1, g2) {
+    this._push(this.createInt64Neg(f1, f2, g1, g2))
   }
 
   pushTrue () {
-    this._push(true)
+    this._push(this.createTrue())
   }
 
   pushFalse () {
-    this._push(false)
+    this._push(this.createFalse())
   }
 
   pushNull () {
-    this._push(null)
+    this._push(this.createNull())
   }
 
   pushUndefined () {
-    this._push(void 0)
+    this._push(this.createUndefined())
   }
 
   pushInfinity () {
-    this._push(Infinity)
+    this._push(this.createInfinity())
   }
 
   pushInfinityNeg () {
-    this._push(-Infinity)
+    this._push(this.createInfinityNeg())
   }
 
   pushNaN () {
-    this._push(NaN)
+    this._push(this.createNaN())
   }
 
   pushNaNNeg () {
-    this._push(-NaN)
+    this._push(this.createNaNNeg())
   }
 
   pushArrayStart () {
@@ -356,14 +442,6 @@ class Decoder {
     }
   }
 
-  createByteString (start, end) {
-    if (start === end) {
-      return new Buffer(0)
-    }
-
-    return new Uint8Array(this._heap.slice(start, end))
-  }
-
   pushByteString (start, end) {
     this._push(this.createByteString(start, end))
   }
@@ -379,22 +457,14 @@ class Decoder {
   }
 
   pushUtf8String (start, end) {
-    if (start === end) {
-      this._push('')
-      return
-    }
-
-    this._push(
-      (new Buffer(this._heap.slice(start, end))).toString('utf8')
-    )
+    this._push(this.createUtf8String(start, end))
   }
 
   pushSimpleUnassigned (val) {
-    this._push(new Simple(val))
+    this._push(this.createSimpleUnassigned(val))
   }
 
   pushTagStart (tag) {
-    console.log('new tag', tag)
     this._parents[this._depth] = {
       type: c.PARENT.TAG,
       length: 1,
@@ -411,7 +481,7 @@ class Decoder {
   }
 
   pushTagUnassigned (tagNumber) {
-    this._push(this._createTag(tagNumber))
+    this._push(this.createTagUnassigned(tagNumber))
   }
 
   pushBreak () {
