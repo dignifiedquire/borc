@@ -1,11 +1,13 @@
 'use strict'
 
+console.log('PID: %s', process.pid)
+
 const Benchmark = require('benchmark')
 if (typeof window !== 'undefined') {
   window.Benchmark = Benchmark
 }
 
-const nodeCbor = require('cbor')
+// const nodeCbor = require('cbor')
 
 const fastCbor = require('../')
 const vectors = require('../test/fixtures/vectors.js')
@@ -25,11 +27,11 @@ const suite = new Benchmark.Suite('cbor')
 let vecLength = vectors.length
 let res = []
 
-suite.add(`encode - node-cbor - ${vecLength}`, () => {
-  for (let i = 0; i < vecLength; i++) {
-    res.push(nodeCbor.encode(vectors[i].decoded)[0])
-  }
-})
+// suite.add(`encode - node-cbor - ${vecLength}`, () => {
+//   for (let i = 0; i < vecLength; i++) {
+//     res.push(nodeCbor.encode(vectors[i].decoded)[0])
+//   }
+// })
 
 suite.add(`encode - fast-cbor - ${vecLength}`, () => {
   for (let i = 0; i < vecLength; i++) {
@@ -37,40 +39,40 @@ suite.add(`encode - fast-cbor - ${vecLength}`, () => {
   }
 })
 
-suite.add(`encode - stream - fast-cbor - ${vecLength}`, () => {
-  const enc = new fastCbor.Encoder({stream (chunk) {
-    res.push(chunk)
-  }})
-  for (let i = 0; i < vecLength; i++) {
-    enc.write(vectors[i].decoded)
-  }
-})
+// suite.add(`encode - stream - fast-cbor - ${vecLength}`, () => {
+//   const enc = new fastCbor.Encoder({stream (chunk) {
+//     res.push(chunk)
+//   }})
+//   for (let i = 0; i < vecLength; i++) {
+//     enc.write(vectors[i].decoded)
+//   }
+// })
 
-suite.add(`encode - JSON.stringify - ${vecLength}`, () => {
-  for (let i = 0; i < vecLength; i++) {
-    res.push(JSON.stringify(vectors[i].decoded))
-  }
-})
+// suite.add(`encode - JSON.stringify - ${vecLength}`, () => {
+//   for (let i = 0; i < vecLength; i++) {
+//     res.push(JSON.stringify(vectors[i].decoded))
+//   }
+// })
 
-// --
+// // --
 
-suite.add(`decode - node-cbor - ${buffers.length}`, () => {
-  for (let i = 0; i < vecLength; i++) {
-    nodeCbor.decodeAllSync(buffers[i])
-  }
-})
+// suite.add(`decode - node-cbor - ${buffers.length}`, () => {
+//   for (let i = 0; i < vecLength; i++) {
+//     nodeCbor.decodeAllSync(buffers[i])
+//   }
+// })
 
-suite.add(`decode - fast-cbor - ${buffers.length}`, () => {
-  for (let i = 0; i < buffers.length; i++) {
-    res.push(fastDecoder.decodeFirst(buffers[i]))
-  }
-})
+// suite.add(`decode - fast-cbor - ${buffers.length}`, () => {
+//   for (let i = 0; i < buffers.length; i++) {
+//     res.push(fastDecoder.decodeFirst(buffers[i]))
+//   }
+// })
 
-suite.add(`decode - JSON.parse - ${parsed.length}`, () => {
-  for (let i = 0; i < parsed.length; i++) {
-    res.push(JSON.parse(parsed[i]))
-  }
-})
+// suite.add(`decode - JSON.parse - ${parsed.length}`, () => {
+//   for (let i = 0; i < parsed.length; i++) {
+//     res.push(JSON.parse(parsed[i]))
+//   }
+// })
 
 suite
   .on('cycle', (event) => {

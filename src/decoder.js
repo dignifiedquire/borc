@@ -5,22 +5,10 @@ const Bignumber = require('bignumber.js')
 
 const parser = require('./decoder.asm')
 const utils = require('./utils')
-const SHIFT32 = require('./constants').SHIFT32
+const c = require('./constants')
 const Simple = require('./simple')
 const Tagged = require('./tagged')
 const url = require('url')
-
-const MAX_SAFE_HIGH = 0x1fffff
-const NEG_ONE = new Bignumber(-1)
-const TEN = new Bignumber(10)
-const TWO = new Bignumber(2)
-
-const PARENT_ARRAY = 0
-const PARENT_OBJECT = 1
-const PARENT_MAP = 2
-const PARENT_TAG = 3
-const PARENT_BYTE_STRING = 4
-const PARENT_UTF8_STRING = 5
 
 class Decoder {
   constructor (opts) {
@@ -41,14 +29,14 @@ class Decoder {
       0: (val) => new Date(val),
       1: (val) => new Date(val * 1000),
       2: (val) => utils.arrayBufferToBignumber(val),
-      3: (val) => NEG_ONE.minus(utils.arrayBufferToBignumber(val)),
+      3: (val) => c.NEG_ONE.minus(utils.arrayBufferToBignumber(val)),
       4: (v) => {
         // const v = new Uint8Array(val)
-        return TEN.pow(v[0]).times(v[1])
+        return c.TEN.pow(v[0]).times(v[1])
       },
       5: (v) => {
         // const v = new Uint8Array(val)
-        return TWO.pow(v[0]).times(v[1])
+        return c.TWO.pow(v[0]).times(v[1])
       },
       32: (val) => url.parse(val),
       35: (val) => new RegExp(val)
@@ -115,19 +103,19 @@ class Decoder {
     }
 
     switch (p.type) {
-      case PARENT_TAG:
+      case c.PARENT.TAG:
         this._push(
           this._createTag(p.ref[0], p.ref[1])
         )
         break
-      case PARENT_BYTE_STRING:
+      case c.PARENT.BYTE_STRING:
         this._push(new Uint8Array(p.ref))
         break
-      case PARENT_UTF8_STRING:
+      case c.PARENT.UTF8_STRING:
         this._push(new Buffer(p.ref))
         break
-      case PARENT_MAP:
-      case PARENT_OBJECT:
+      case c.PARENT.MAP:
+      case c.PARENT.OBJECT:
         if (p.values % 2 > 0) {
           throw new Error('Odd number of elements in the map')
         }
@@ -136,7 +124,7 @@ class Decoder {
         break
     }
 
-    if (this._currentParent && this._currentParent.type === PARENT_TAG) {
+    if (this._currentParent && this._currentParent.type === c.PARENT.TAG) {
       this._dec()
     }
   }
@@ -174,9 +162,9 @@ class Decoder {
     p.values ++
 
     switch (p.type) {
-      case PARENT_ARRAY:
-      case PARENT_BYTE_STRING:
-      case PARENT_UTF8_STRING:
+      case c.PARENT.ARRAY:
+      case c.PARENT.BYTE_STRING:
+      case c.PARENT.UTF8_STRING:
         if (p.length > -1) {
           this._ref[this._ref.length - p.length] = val
         } else {
@@ -184,7 +172,7 @@ class Decoder {
         }
         this._dec()
         break
-      case PARENT_OBJECT:
+      case c.PARENT.OBJECT:
         if (p.tmpKey != null) {
           this._ref[p.tmpKey] = val
           p.tmpKey = null
@@ -194,12 +182,12 @@ class Decoder {
 
           if (typeof p.tmpKey !== 'string') {
             // too bad, convert to a Map
-            p.type = PARENT_MAP
+            p.type = c.PARENT.MAP
             p.ref = utils.buildMap(p.ref)
           }
         }
         break
-      case PARENT_MAP:
+      case c.PARENT.MAP:
         if (p.tmpKey != null) {
           this._ref.set(p.tmpKey, val)
           p.tmpKey = null
@@ -208,7 +196,7 @@ class Decoder {
           p.tmpKey = val
         }
         break
-      case PARENT_TAG:
+      case c.PARENT.TAG:
         this._ref.push(val)
         if (!hasChildren) {
           this._dec()
@@ -235,7 +223,7 @@ class Decoder {
   _reset () {
     this._res = []
     this._parents = [{
-      type: PARENT_ARRAY,
+      type: c.PARENT.ARRAY,
       length: -1,
       ref: this._res,
       values: 0,
@@ -281,12 +269,12 @@ class Decoder {
     const f = utils.buildInt32(f1, f2)
     const g = utils.buildInt32(g1, g2)
 
-    if (f > MAX_SAFE_HIGH) {
+    if (f > c.MAX_SAFE_HIGH) {
       this._push(
-        NEG_ONE.sub(new Bignumber(f).times(SHIFT32).plus(g))
+        c.NEG_ONE.sub(new Bignumber(f).times(c.SHIFT32).plus(g))
       )
     } else {
-      this._push(-1 - ((f * SHIFT32) + g))
+      this._push(-1 - ((f * c.SHIFT32) + g))
     }
   }
 
@@ -323,7 +311,7 @@ class Decoder {
   }
 
   pushArrayStart () {
-    this._createParent([], PARENT_ARRAY, -1)
+    this._createParent([], c.PARENT.ARRAY, -1)
   }
 
   pushArrayStartFixed (len) {
@@ -341,7 +329,7 @@ class Decoder {
   }
 
   pushObjectStart () {
-    this._createParent({}, PARENT_OBJECT, -1)
+    this._createParent({}, c.PARENT.OBJECT, -1)
   }
 
   pushObjectStartFixed (len) {
@@ -360,7 +348,7 @@ class Decoder {
 
   pushByteStringStart () {
     this._parents[this._depth] = {
-      type: PARENT_BYTE_STRING,
+      type: c.PARENT.BYTE_STRING,
       length: -1,
       ref: [],
       values: 0,
@@ -368,18 +356,21 @@ class Decoder {
     }
   }
 
-  pushByteString (start, end) {
+  createByteString (start, end) {
     if (start === end) {
-      this._push(new Buffer(0))
-      return
+      return new Buffer(0)
     }
 
-    this._push(new Uint8Array(this._heap.slice(start, end)))
+    return new Uint8Array(this._heap.slice(start, end))
+  }
+
+  pushByteString (start, end) {
+    this._push(this.createByteString(start, end))
   }
 
   pushUtf8StringStart () {
     this._parents[this._depth] = {
-      type: PARENT_UTF8_STRING,
+      type: c.PARENT.UTF8_STRING,
       length: -1,
       ref: [],
       values: 0,
@@ -403,8 +394,9 @@ class Decoder {
   }
 
   pushTagStart (tag) {
+    console.log('new tag', tag)
     this._parents[this._depth] = {
-      type: PARENT_TAG,
+      type: c.PARENT.TAG,
       length: 1,
       ref: [tag]
     }
@@ -436,7 +428,7 @@ class Decoder {
       return
     }
 
-    this._createParent({}, PARENT_OBJECT, len)
+    this._createParent({}, c.PARENT.OBJECT, len)
   }
 
   _createArrayStartFixed (len) {
@@ -445,7 +437,7 @@ class Decoder {
       return
     }
 
-    this._createParent(new Array(len), PARENT_ARRAY, len)
+    this._createParent(new Array(len), c.PARENT.ARRAY, len)
   }
 
   _decode (input) {
@@ -488,26 +480,26 @@ class Decoder {
 
     return this._res
   }
-}
 
-Decoder.decode = function decode (input, enc) {
-  if (typeof input === 'string') {
-    input = new Buffer(input, enc || 'hex')
+  static decode (input, enc) {
+    if (typeof input === 'string') {
+      input = new Buffer(input, enc || 'hex')
+    }
+
+    const dec = new Decoder()
+    return dec.decodeFirst(input)
   }
 
-  const dec = new Decoder()
-  return dec.decodeFirst(input)
+  static decodeAll (input, enc) {
+    if (typeof input === 'string') {
+      input = new Buffer(input, enc || 'hex')
+    }
+
+    const dec = new Decoder()
+    return dec.decodeAll(input)
+  }
 }
 
 Decoder.decodeFirst = Decoder.decode
-
-Decoder.decodeAll = function decode (input, enc) {
-  if (typeof input === 'string') {
-    input = new Buffer(input, enc || 'hex')
-  }
-
-  const dec = new Decoder()
-  return dec.decodeAll(input)
-}
 
 module.exports = Decoder

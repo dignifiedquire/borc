@@ -1,27 +1,34 @@
-// 'use strict'
+/* eslint-env mocha */
+'use strict'
 
-// const cbor = require('../')
-// const test = require('ava')
-// const cases = require('./fixtures/cases')
+const expect = require('chai').expect
 
-// function testAll (t, list) {
-//   t.plan(list.length)
-//   return Promise.all(list.map(c => {
-//     return cbor.diagnose(cases.toBuffer(c))
-//       .then(d => {
-//         return t.is(d, c[1] + '\n')
-//       })
-//   }))
-// }
+const cbor = require('../')
+const cases = require('./fixtures/cases')
 
-// function failAll (t, list) {
-//   t.plan(list.length)
-//   list.map(c => t.throws(cbor.diagnose(cases.toBuffer(c))))
-// }
+function testAll (list) {
+  list.forEach(c => {
+    expect(
+      cbor.diagnose(cases.toBuffer(c))
+    ).to.be.eql(
+      c[1]
+    )
+  })
+}
 
-// test('diagnose', t => testAll(t, cases.good))
-// test('decode', t => testAll(t, cases.decodeGood))
-// test('edges', t => failAll(t, cases.decodeBad))
+function failAll (list) {
+  list.forEach(c => {
+    expect(
+      () => cbor.diagnose(cases.toBuffer(c))
+    ).to.throw
+  })
+}
+
+describe('Diagnose', () => {
+  it.only('diagnose', () => testAll(cases.good))
+  it('decode', () => testAll(cases.decodeGood))
+  it('edges', () => failAll(cases.decodeBad))
+})
 
 // test.cb('construct', t => {
 //   const d = new cbor.Diagnose()
