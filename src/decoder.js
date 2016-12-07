@@ -430,7 +430,7 @@ class Decoder {
   }
 
   pushObjectStart () {
-    this._createParent({}, c.PARENT.OBJECT, -1)
+    this._createObjectStartFixed(-1)
   }
 
   pushObjectStartFixed (len) {
@@ -508,11 +508,21 @@ class Decoder {
   }
 
   _createObjectStartFixed (len) {
+    if (len === 0) {
+      this._push(this.createObject({}))
+      return
+    }
+
     this._createParent({}, c.PARENT.OBJECT, len)
   }
 
   _createArrayStartFixed (len) {
-    this._createParent([], c.PARENT.ARRAY, len)
+    if (len === 0) {
+      this._push(this.createArray([]))
+      return
+    }
+
+    this._createParent(new Array(len), c.PARENT.ARRAY, len)
   }
 
   _decode (input) {

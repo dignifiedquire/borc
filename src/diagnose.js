@@ -1,6 +1,7 @@
 'use strict'
 
 const Decoder = require('./decoder')
+const utils = require('./utils')
 
 /**
  * Output the diagnostic format from a stream of CBOR bytes.
@@ -8,7 +9,6 @@ const Decoder = require('./decoder')
  */
 class Diagnose extends Decoder {
   createTag (tagNumber, value) {
-    console.log('creating tag', tagNumber, value)
     return `${tagNumber}(${value})`
   }
 
@@ -42,12 +42,16 @@ class Diagnose extends Decoder {
 
   createFloat (val) {
     const fl = super.createFloat(val)
+    if (utils.isNegativeZero(val)) {
+      return '-0_1'
+    }
+
     return `${fl}_1`
   }
 
   createFloatSingle (a, b, c, d) {
     const fl = super.createFloatSingle(a, b, c, d)
-    return `${fl}_3`
+    return `${fl}_2`
   }
 
   createFloatDouble (a, b, c, d, e, f, g, h) {
