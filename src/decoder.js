@@ -109,25 +109,25 @@ class Decoder {
         )
         break
       case c.PARENT.BYTE_STRING:
-        this._push(new Uint8Array(p.ref))
+        this._push(this.createByteString(p.ref, p.length))
         break
       case c.PARENT.UTF8_STRING:
-        this._push(new Buffer(p.ref))
+        this._push(this.createUtf8String(p.ref, p.length))
         break
       case c.PARENT.MAP:
         if (p.values % 2 > 0) {
           throw new Error('Odd number of elements in the map')
         }
-        this._push(this.createMap(p.ref))
+        this._push(this.createMap(p.ref, p.length))
         break
       case c.PARENT.OBJECT:
         if (p.values % 2 > 0) {
           throw new Error('Odd number of elements in the map')
         }
-        this._push(this.createObject(p.ref))
+        this._push(this.createObject(p.ref, p.length))
         break
       case c.PARENT.ARRAY:
-        this._push(this.createArray(p.ref))
+        this._push(this.createArray(p.ref, p.length))
         break
       default:
         break
@@ -240,19 +240,23 @@ class Decoder {
     return typ(value)
   }
 
-  createMap (obj) {
+  createMap (obj, len) {
     return obj
   }
 
-  createObject (obj) {
+  createObject (obj, len) {
     return obj
   }
 
-  createArray (arr) {
+  createArray (arr, len) {
     return arr
   }
 
-  createByteString (start, end) {
+  createByteString (raw, len) {
+    return new Uint8Array(raw)
+  }
+
+  createByteStringFromHeap (start, end) {
     if (start === end) {
       return new Buffer(0)
     }
@@ -331,7 +335,11 @@ class Decoder {
     return -NaN
   }
 
-  createUtf8String (start, end) {
+  createUtf8String (raw, len) {
+    return new Buffer(raw)
+  }
+
+  createUtf8StringFromHeap (start, end) {
     if (start === end) {
       return ''
     }
@@ -458,7 +466,7 @@ class Decoder {
   }
 
   pushByteString (start, end) {
-    this._push(this.createByteString(start, end))
+    this._push(this.createByteStringFromHeap(start, end))
   }
 
   pushUtf8StringStart () {
@@ -472,7 +480,7 @@ class Decoder {
   }
 
   pushUtf8String (start, end) {
-    this._push(this.createUtf8String(start, end))
+    this._push(this.createUtf8StringFromHeap(start, end))
   }
 
   pushSimpleUnassigned (val) {

@@ -924,7 +924,7 @@ exports.decodeGood = [
           eeff99    -- eeff99p
         ff          -- BREAK
 0xd8405f44aabbccdd43eeff99ff`],
-  [{'!5{': ['-Lhe2xMsDYB!_', [1.9054760350149715, {'{_aC(z~> ': -1.267609797117641}, [{'9\n': [undefined]}]]]}, 'garbage_1', `
+  [{'!5{': ['-Lhe2xMsDYB!_', [1.9054760350149715, {'{_aC(z~> ': -1.267609797117641}, [{'9\n': [undefined]}]]]}, '{"!5{": ["-Lhe2xMsDYB!_", [1.9054760350149715_3, {"{_aC(z~> ": -1.267609797117641_3}, [{"9\n": [undefined]}]]]}', `
 a1                                  # map(1)
    63                               # text(3)
       21357b                        # "!5{"
@@ -962,7 +962,7 @@ a1                                  # map(1)
           }]
         ]
       }
-    }], 'garbage_2', `
+    }], `[true, {"#0": {"hxj(DOQZ-+%7>'": "oA|", "": true, "4(CX:": [-0.992622389595498_3, [{"Sedx": -0.49904045994866497_3, "f|mMuJDG2K2>b:Ob-WC": true, "t": {"}[": false, "O_b": true, "P;?V": true, ".mP2U!1r=": [null]}}]]}}]`, `
 82                                      # array(2)
    f5                                   # primitive(21)
    a1                                   # map(1)
@@ -1020,7 +1020,7 @@ a1                                  # map(1)
         }
       }
     }
-  }], 'garbage_3', `
+  }], '[{"pX": {}, "f$+V ": {"&{r": true, "4o": {"0": "hN\\bMw", "4[p4vnF1iB2}": {"%": -0.6218326742673507_3, "Y\n&": false, "_vR^X": true, "9>HENoMZcU&ko^(}R": -1.1453826384796209_3}}}}]', `
 81                                      # array(1)
    a2                                   # map(2)
       62                                # text(2)

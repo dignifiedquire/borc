@@ -59,8 +59,19 @@ class Diagnose extends Decoder {
     return `${fl}_3`
   }
 
-  createByteString (start, end) {
-    const val = (new Buffer(super.createByteString(start, end))).toString('hex')
+  createByteString (raw, len) {
+    const val = raw.join(', ')
+
+    if (len === -1) {
+      return `(_ ${val})`
+    }
+    return `h'${val}`
+  }
+
+  createByteStringFromHeap (start, end) {
+    const val = (new Buffer(
+      super.createByteStringFromHeap(start, end)
+    )).toString('hex')
 
     return `h'${val}'`
   }
@@ -93,29 +104,55 @@ class Diagnose extends Decoder {
     return `simple(${val})`
   }
 
-  createArray (arr) {
-    const val = super.createArray(arr)
+  createArray (arr, len) {
+    const val = super.createArray(arr, len)
+
+    if (len === -1) {
+      // indefinite
+      return `[_ ${val.join(', ')}]`
+    }
+
     return `[${val.join(', ')}]`
   }
 
-  createMap (map) {
+  createMap (map, len) {
     const val = super.createMap(map)
     const list = Array.from(val.keys())
           .reduce(collectObject(val), '')
 
+    if (len === -1) {
+      return `{_ ${list}}`
+    }
+
     return `{${list}}`
   }
 
-  createObject (obj) {
+  createObject (obj, len) {
     const val = super.createObject(obj)
     const map = Object.keys(val)
           .reduce(collectObject(val), '')
 
+    if (len === -1) {
+      return `{_ ${map}}`
+    }
+
     return `{${map}}`
   }
 
-  createUtf8String (start, end) {
-    const val = (new Buffer(super.createUtf8String(start, end))).toString('utf8')
+  createUtf8String (raw, len) {
+    const val = raw.join(', ')
+
+    if (len === -1) {
+      return `(_ ${val})`
+    }
+
+    return `"${val}"`
+  }
+
+  createUtf8StringFromHeap (start, end) {
+    const val = (new Buffer(
+      super.createUtf8StringFromHeap(start, end)
+    )).toString('utf8')
 
     return `"${val}"`
   }
