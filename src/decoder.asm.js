@@ -4,7 +4,7 @@ module.exports = function decodeAsm (stdlib, foreign, buffer) {
   // -- Imports
 
   var heap = new stdlib.Uint8Array(buffer)
-  // var log = foreign.log
+  var log = foreign.log
   var pushInt = foreign.pushInt
   var pushInt32 = foreign.pushInt32
   var pushInt32Neg = foreign.pushInt32Neg
@@ -490,7 +490,7 @@ module.exports = function decodeAsm (stdlib, foreign, buffer) {
 
     offset = (offset + 3) | 0
 
-    return 1
+    return 0
   }
 
   function ARRAY_32 (octet) {
