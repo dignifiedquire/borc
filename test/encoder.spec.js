@@ -58,6 +58,49 @@ describe('encoder', () => {
       ).to.throw()
     })
 
+    it('roundtrips an array of custom types', () => {
+      class Foo {
+        constructor (data) {
+          this.data = data
+        }
+      }
+
+      function encodeFoo (enc, foo) {
+        enc.pushAny(new cbor.Tagged(12345, foo.data))
+      }
+
+      function decodeFoo (data) {
+        return new Foo(data)
+      }
+
+      const encoder = new cbor.Encoder({
+        genTypes: [
+          [Foo, encodeFoo]
+        ]
+      })
+
+      const decoder = new cbor.Decoder({
+        tags: {
+          12345: decodeFoo
+        }
+      })
+
+      const input = [
+        new Foo('hello'),
+        new Foo('world')
+      ]
+
+      encoder.pushAny(input)
+      const serialized = encoder.finalize()
+      const deserialized = decoder.decodeFirst(serialized)
+
+      expect(
+        deserialized
+      ).to.be.eql(
+        input
+      )
+    })
+
     it('addSemanticType', () => {
       // before the tag, this is an innocuous object:
       // {"value": "foo"}
