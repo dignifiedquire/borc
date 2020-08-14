@@ -1,6 +1,8 @@
 /* eslint-disable no-console */
 'use strict'
 
+const uint8ArrayFromString = require('uint8arrays/from-string')
+
 console.log('PID: %s', process.pid)
 
 const Benchmark = require('benchmark')
@@ -21,7 +23,7 @@ const parsed = vectors
 
 const buffers = vectors
   .filter((v) => v.hex && v.decoded)
-  .map((v) => Buffer.from(v.hex, 'hex'))
+  .map((v) => uint8ArrayFromString(v.hex, 'base16'))
 
 const suite = new Benchmark.Suite('cbor')
 

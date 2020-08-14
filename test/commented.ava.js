@@ -47,7 +47,7 @@
 //   parser.pipe(bs)
 
 //   parser.on('end', function () {
-//     t.deepEqual('\n' + bs.toString('utf8'), `
+//     t.deepEqual('\n' + uint8ArrayToString(bs), `
 //   61                -- String, length: 1
 //     61              -- "a"
 // 0x6161
@@ -69,7 +69,7 @@
 // })
 
 // test('inputs', t => {
-//   return cbor.comment('mB4AAQIDBAUGBwgJAAECAwQFBgcICQABAgMEBQYHCAk=', 'base64')
+//   return cbor.comment('mB4AAQIDBAUGBwgJAAECAwQFBgcICQABAgMEBQYHCAk=', 'base64pad')
 //     .then(function (c) {
 //       t.deepEqual('\n' + c, `
 //   98                -- Array, length next 1 byte

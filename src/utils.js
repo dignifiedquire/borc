@@ -1,7 +1,7 @@
 'use strict'
 
-const { Buffer } = require('buffer')
 const Bignumber = require('bignumber.js').BigNumber
+const uint8ArrayCompare = require('uint8arrays/compare')
 
 const constants = require('./constants')
 const SHIFT32 = constants.SHIFT32
@@ -80,9 +80,10 @@ exports.writeHalf = function writeHalf (buf, half) {
   // } u32;
   // u32.f = float_val;
 
-  const u32 = Buffer.allocUnsafe(4)
-  u32.writeFloatBE(half, 0)
-  const u = u32.readUInt32BE(0)
+  const view = new DataView(new ArrayBuffer(4))
+  view.setFloat32(0, half)
+
+  const u = view.getUint32(0)
 
   // if ((u32.u & 0x1FFF) == 0) { /* worth trying half */
 
@@ -133,7 +134,9 @@ exports.writeHalf = function writeHalf (buf, half) {
   //   ensure_writable(3);
   //   u16 = s16;
   //   be16 = hton16p((const uint8_t*)&u16);
-  buf.writeUInt16BE(s16, 0)
+
+  new DataView(buf.buffer, buf.byteOffset, buf.byteLength).setUint16(0, s16)
+
   return true
 }
 
@@ -149,7 +152,7 @@ exports.keySorter = function (a, b) {
     return -1
   }
 
-  return a[0].compare(b[0])
+  return uint8ArrayCompare(a[0], b[0])
 }
 
 // Adapted from http://www.2ality.com/2012/03/signedzero.html

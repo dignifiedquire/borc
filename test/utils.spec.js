@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 'use strict'
-const { Buffer } = require('buffer')
-const expect = require('chai').expect
+
+const { expect } = require('aegir/utils/chai')
 const utils = require('../src/utils')
 
 function bin (s) {
@@ -18,7 +18,7 @@ function bin (s) {
     end += 8
   }
 
-  return Buffer.from(chunks)
+  return Uint8Array.from(chunks)
 }
 
 describe('utils', () => {

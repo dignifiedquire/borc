@@ -1,8 +1,9 @@
 'use strict'
 
-const { Buffer } = require('buffer')
 const Decoder = require('./decoder')
 const utils = require('./utils')
+const uint8ArrayFromString = require('uint8arrays/from-string')
+const uint8ArrayToString = require('uint8arrays/to-string')
 
 /**
  * Output the diagnostic format from a stream of CBOR bytes.
@@ -70,9 +71,10 @@ class Diagnose extends Decoder {
   }
 
   createByteStringFromHeap (start, end) {
-    const val = (Buffer.from(
-      super.createByteStringFromHeap(start, end)
-    )).toString('hex')
+    const val = uint8ArrayToString(
+      super.createByteStringFromHeap(start, end),
+      'base16'
+    )
 
     return `h'${val}'`
   }
@@ -151,16 +153,14 @@ class Diagnose extends Decoder {
   }
 
   createUtf8StringFromHeap (start, end) {
-    const val = (Buffer.from(
-      super.createUtf8StringFromHeap(start, end)
-    )).toString('utf8')
+    const val = super.createUtf8StringFromHeap(start, end)
 
     return `"${val}"`
   }
 
   static diagnose (input, enc) {
     if (typeof input === 'string') {
-      input = Buffer.from(input, enc || 'hex')
+      input = uint8ArrayFromString(input, enc || 'base16')
     }
 
     const dec = new Diagnose()

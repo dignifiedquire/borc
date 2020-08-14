@@ -1,9 +1,11 @@
 /* eslint max-nested-callbacks: ["error", 8] */
 /* eslint-env mocha */
 'use strict'
-const { Buffer } = require('buffer')
-const expect = require('chai').expect
+
+const { expect } = require('aegir/utils/chai')
 const Bignum = require('bignumber.js').BigNumber
+const uint8ArrayToString = require('uint8arrays/to-string')
+const uint8ArrayFromString = require('uint8arrays/from-string')
 
 const cbor = require('../')
 const cases = require('./fixtures/cases')
@@ -13,7 +15,7 @@ function testAll (list) {
   list.forEach((c) => {
     it(c[1], () => {
       expect(
-        cbor.encode(c[0]).toString('hex')
+        uint8ArrayToString(cbor.encode(c[0]), 'base16')
       ).to.be.eql(
         cases.toString(c)
       )
@@ -30,7 +32,7 @@ describe('encoder', () => {
       if (v.decoded && v.roundtrip) {
         it(v.hex, () => {
           expect(
-            cbor.encode(v.decoded).toString('hex')
+            uint8ArrayToString(cbor.encode(v.decoded), 'base16')
           ).to.be.eql(
             v.hex
           )
@@ -42,7 +44,7 @@ describe('encoder', () => {
   describe('misc', () => {
     it('undefined', () => {
       expect(
-        cbor.encode(undefined).toString('hex')
+        uint8ArrayToString(cbor.encode(undefined), 'base16')
       ).to.be.eql(
         'f7'
       )
@@ -64,7 +66,7 @@ describe('encoder', () => {
       const tc = new cases.TempClass('foo')
       delete (cases.TempClass.prototype.encodeCBOR)
       expect(
-        cbor.Encoder.encode(tc).toString('hex')
+        uint8ArrayToString(cbor.Encoder.encode(tc), 'base16')
       ).to.be.eql(
         'a16576616c756563666f6f'
       )
@@ -77,32 +79,32 @@ describe('encoder', () => {
       gen.pushAny(tc)
 
       expect(
-        gen.finalize().toString('hex')
+        uint8ArrayToString(gen.finalize(), 'base16')
       ).to.be.eql(
         'd9fffe63666f6f'
       )
 
       function hexPackBuffer (gen, obj, bufs) {
-        gen.pushAny('0x' + obj.toString('hex'))
+        gen.pushAny('0x' + obj.toString('base16'))
         // intentionally don't return
       }
 
       class HexBuffer {
         constructor (val, enc) {
-          this.val = Buffer.from(val, enc)
+          this.val = uint8ArrayFromString(val, enc)
         }
 
         toString (enc) {
-          return this.val.toString(enc)
+          return uint8ArrayToString(this.val, enc)
         }
       }
 
       // replace Buffer serializer with hex strings
       gen.addSemanticType(HexBuffer, hexPackBuffer)
-      gen.pushAny(new HexBuffer('010203', 'hex'))
+      gen.pushAny(new HexBuffer('010203', 'base16'))
 
       expect(
-        gen.finalize().toString('hex')
+        uint8ArrayToString(gen.finalize(), 'base16')
       ).to.be.eql(
         '683078303130323033'
       )
@@ -123,15 +125,15 @@ describe('encoder', () => {
     enc.write(123456)
 
     expect(chunks).to.be.eql([
-      Buffer.from('65', 'hex'),
-      Buffer.from('68656c6c6f', 'hex'),
-      Buffer.from('65', 'hex'),
-      Buffer.from('776f726c64', 'hex'),
-      Buffer.from('a1', 'hex'),
-      Buffer.from('6161', 'hex'),
-      Buffer.from('01', 'hex'),
-      Buffer.from('1a', 'hex'),
-      Buffer.from('0001e240', 'hex')
+      uint8ArrayFromString('65', 'base16'),
+      uint8ArrayFromString('68656c6c6f', 'base16'),
+      uint8ArrayFromString('65', 'base16'),
+      uint8ArrayFromString('776f726c64', 'base16'),
+      uint8ArrayFromString('a1', 'base16'),
+      uint8ArrayFromString('6161', 'base16'),
+      uint8ArrayFromString('01', 'base16'),
+      uint8ArrayFromString('1a', 'base16'),
+      uint8ArrayFromString('0001e240', 'base16')
     ])
   })
 
@@ -148,13 +150,13 @@ describe('encoder', () => {
   describe('canonical', () => {
     it('keys', () => {
       expect(
-        cbor.Encoder.encode(cases.goodMap).toString('hex')
+        uint8ArrayToString(cbor.Encoder.encode(cases.goodMap), 'base16')
       ).to.be.eql(
         'ad0063626172806b656d707479206172726179a069656d707479206f626af6646e756c6c613063666f6f6161016162018101656172726179626161026262620263616161036362626203a1613102636f626a'
       )
 
       expect(
-        cbor.Encoder.encode({ aa: 2, b: 1 }).toString('hex')
+        uint8ArrayToString(cbor.Encoder.encode({ aa: 2, b: 1 }), 'base16')
       ).to.be.eql(
         'a261620162616102'
       )
@@ -164,7 +166,7 @@ describe('encoder', () => {
       for (const numEnc of cases.canonNums) {
         it(`${numEnc[0]} -> ${numEnc[1]}`, () => {
           expect(
-            cbor.Encoder.encode(numEnc[0]).toString('hex')
+            uint8ArrayToString(cbor.Encoder.encode(numEnc[0]), 'base16')
           ).to.be.eql(
             numEnc[1]
           )
@@ -207,7 +209,7 @@ describe('encoder', () => {
     it('flat', () => {
       const a1 = new TestA()
 
-      expect(a1.serialize()).to.be.eql(Buffer.from([24, 44]))
+      expect(a1.serialize()).to.be.eql(Uint8Array.from([24, 44]))
       expect(TestA.deserialize(a1.serialize())).to.be.eql([44])
     })
 
