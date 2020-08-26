@@ -47,20 +47,18 @@
     "benchmark": "^2.1.0",
     "budo": "^11.2.0",
     "cbor": "^4.0.0",
-    "chai": "^4.1.2",
-    "dirty-chai": "^2.0.1",
     "garbage": "0.0.0"
   },
   "license": "MIT",
   "readmeFilename": "README.md",
   "dependencies": {
     "bignumber.js": "^9.0.0",
-    "buffer": "^5.5.0",
     "commander": "^2.15.0",
     "ieee754": "^1.1.13",
     "iso-url": "~0.4.7",
     "json-text-sequence": "~0.1.0",
-    "readable-stream": "^3.6.0"
+    "readable-stream": "^3.6.0",
+    "uint8arrays": "^1.1.0"
   },
   "engines": {
     "node": ">=4"

@@ -1,6 +1,5 @@
 'use strict'
 
-const { Buffer } = require('buffer')
 const ieee754 = require('ieee754')
 const Bignumber = require('bignumber.js').BigNumber
 
@@ -10,6 +9,9 @@ const c = require('./constants')
 const Simple = require('./simple')
 const Tagged = require('./tagged')
 const { URL } = require('iso-url')
+const uint8ArrayToString = require('uint8arrays/to-string')
+const uint8ArrayFromString = require('uint8arrays/from-string')
+const uint8ArrayConcat = require('uint8arrays/concat')
 
 /**
  * Transform binary cbor data into JavaScript objects.
@@ -31,8 +33,6 @@ class Decoder {
 
     // Heap use to share the input with the parser
     this._heap = new ArrayBuffer(opts.size)
-    this._heap8 = new Uint8Array(this._heap)
-    this._buffer = Buffer.from(this._heap)
 
     this._reset()
 
@@ -266,15 +266,11 @@ class Decoder {
   }
 
   createByteString (raw, len) {
-    return Buffer.concat(raw)
+    return uint8ArrayConcat(raw)
   }
 
   createByteStringFromHeap (start, end) {
-    if (start === end) {
-      return Buffer.alloc(0)
-    }
-
-    return Buffer.from(this._heap.slice(start, end))
+    return new Uint8Array(this._heap, start, end - start)
   }
 
   createInt (val) {
@@ -357,7 +353,7 @@ class Decoder {
       return ''
     }
 
-    return this._buffer.toString('utf8', start, end)
+    return uint8ArrayToString(new Uint8Array(this._heap, start, end - start))
   }
 
   createSimpleUnassigned (val) {
@@ -550,7 +546,9 @@ class Decoder {
     }
 
     this._reset()
-    this._heap8.set(input)
+
+    new Uint8Array(this._heap).set(input)
+
     const code = this.parser.parse(input.byteLength)
 
     if (this._depth > 1) {
@@ -589,12 +587,12 @@ class Decoder {
    * Decode the first cbor object.
    *
    * @param {Buffer|string} input
-   * @param {string} [enc='hex'] - Encoding used if a string is passed.
+   * @param {string} [enc='base16'] - Encoding used if a string is passed.
    * @returns {*}
    */
   static decode (input, enc) {
     if (typeof input === 'string') {
-      input = Buffer.from(input, enc || 'hex')
+      input = uint8ArrayFromString(input, enc || 'base16')
     }
 
     const dec = new Decoder({ size: input.length })
@@ -605,12 +603,12 @@ class Decoder {
    * Decode all cbor objects.
    *
    * @param {Buffer|string} input
-   * @param {string} [enc='hex'] - Encoding used if a string is passed.
+   * @param {string} [enc='base16'] - Encoding used if a string is passed.
    * @returns {Array<*>}
    */
   static decodeAll (input, enc) {
     if (typeof input === 'string') {
-      input = Buffer.from(input, enc || 'hex')
+      input = uint8ArrayFromString(input, enc || 'base16')
     }
 
     const dec = new Decoder({ size: input.length })

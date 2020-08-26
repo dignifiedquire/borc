@@ -1,7 +1,8 @@
 /* eslint-env mocha */
 'use strict'
-const { Buffer } = require('buffer')
-const expect = require('chai').expect
+
+const { expect } = require('aegir/utils/chai')
+const uint8ArrayFromString = require('uint8arrays/from-string')
 
 const cbor = require('../')
 
@@ -13,7 +14,7 @@ describe('tagged', () => {
     expect(tag.value).to.be.eql('one')
     expect(tag.toString()).to.be.eql('1("one")')
 
-    expect(cbor.encode(tag)).to.be.eql(Buffer.from('c1636f6e65', 'hex'))
+    expect(cbor.encode(tag)).to.be.eql(uint8ArrayFromString('c1636f6e65', 'base16'))
   })
 
   it('edges', () => {

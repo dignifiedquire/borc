@@ -1,11 +1,10 @@
 /* eslint-env mocha */
 'use strict'
 
-const { Buffer } = require('buffer')
-const chai = require('chai')
-chai.use(require('dirty-chai'))
-const expect = chai.expect
+const { expect } = require('aegir/utils/chai')
 const Bignumber = require('bignumber.js').BigNumber
+const uint8ArrayFromString = require('uint8arrays/from-string')
+const uint8ArrayToString = require('uint8arrays/to-string')
 
 const cases = require('./fixtures/cases')
 const vectors = require('./fixtures/vectors.js')
@@ -20,7 +19,7 @@ describe('Decoder', function () {
         continue
       }
       testGood(
-        Buffer.from(vectors[i].hex, 'hex'),
+        uint8ArrayFromString(vectors[i].hex, 'base16'),
         vectors[i].decoded,
         vectors[i].hex
       )
@@ -46,7 +45,7 @@ describe('Decoder', function () {
         tags: { 0: replaceTag, 127: newTag }
       })
 
-      const input = Buffer.from('d87f01c001', 'hex')
+      const input = uint8ArrayFromString('d87f01c001', 'base16')
 
       expect(
         d.decodeAll(input)
@@ -56,7 +55,7 @@ describe('Decoder', function () {
     })
 
     it('parse tag', () => {
-      const vals = cbor.decodeFirst('d87f01', 'hex')
+      const vals = cbor.decodeFirst('d87f01', 'base16')
       expect(vals).to.be.eql(new cbor.Tagged(127, 1))
     })
 
@@ -66,7 +65,7 @@ describe('Decoder', function () {
       ).to.be.eql(1)
 
       expect(
-        cbor.decodeFirst('AQ==', 'base64')
+        cbor.decodeFirst('AQ==', 'base64pad')
       ).to.be.eql(1)
 
       expect(
@@ -74,7 +73,7 @@ describe('Decoder', function () {
       ).to.throw()
 
       expect(
-        () => cbor.decodeFirst(Buffer.from(0))
+        () => cbor.decodeFirst(new Uint8Array(0))
       ).to.throw()
     })
 
@@ -86,7 +85,7 @@ describe('Decoder', function () {
       )
 
       expect(
-        cbor.decodeAll('AQ==', 'base64')
+        cbor.decodeAll('AQ==', 'base64pad')
       ).to.be.eql(
         [1]
       )
@@ -96,7 +95,7 @@ describe('Decoder', function () {
       ).to.throw()
 
       expect(cbor.Decoder.decodeAll('0202')).to.be.eql([2, 2])
-      expect(cbor.Decoder.decodeAll('AgI=', 'base64')).to.be.eql([2, 2])
+      expect(cbor.Decoder.decodeAll('AgI=', 'base64pad')).to.be.eql([2, 2])
       expect(cbor.Decoder.decodeAll('0202')).to.be.eql([2, 2])
       expect(cbor.Decoder.decodeAll('f6f6')).to.be.eql([null, null])
       expect(
@@ -157,8 +156,8 @@ describe('Decoder', function () {
     ]
 
     sizes.forEach((size) => it(`decodes buffer of size ${size} bytes`, () => {
-      const input = Buffer.alloc(size)
-      input.fill('A')
+      const input = new Uint8Array(size)
+      input.fill('A'.charCodeAt(0))
 
       expect(
         cbor.decode(cbor.encode(input))
@@ -166,7 +165,7 @@ describe('Decoder', function () {
         input
       )
 
-      const strRes = cbor.decode(cbor.encode(input.toString('utf8')))
+      const strRes = cbor.decode(cbor.encode(uint8ArrayToString(input)))
       expect(strRes.length).to.be.eql(size)
       expect(strRes[0]).to.be.eql('A')
     }))

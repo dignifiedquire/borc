@@ -1,8 +1,8 @@
 'use strict'
 
-const { Buffer } = require('buffer')
 const { URL } = require('iso-url')
 const Bignumber = require('bignumber.js').BigNumber
+const uint8ArrayFromString = require('uint8arrays/from-string')
 
 const utils = require('./utils')
 const constants = require('./constants')
@@ -20,9 +20,9 @@ const UNDEFINED = (constants.MT.SIMPLE_FLOAT << 5) | constants.SIMPLE.UNDEFINED
 const NULL = (constants.MT.SIMPLE_FLOAT << 5) | constants.SIMPLE.NULL
 
 const MAXINT_BN = new Bignumber('0x20000000000000')
-const BUF_NAN = Buffer.from('f97e00', 'hex')
-const BUF_INF_NEG = Buffer.from('f9fc00', 'hex')
-const BUF_INF_POS = Buffer.from('f97c00', 'hex')
+const BUF_NAN = uint8ArrayFromString('f97e00', 'base16')
+const BUF_INF_NEG = uint8ArrayFromString('f9fc00', 'base16')
+const BUF_INF_POS = uint8ArrayFromString('f97c00', 'base16')
 
 function toType (obj) {
   // [object Type]
@@ -37,7 +37,7 @@ function toType (obj) {
 class Encoder {
   /**
    * @param {Object} [options={}]
-   * @param {function(Buffer)} options.stream
+   * @param {function(Uint8Array)} options.stream
    */
   constructor (options) {
     options = options || {}
@@ -132,7 +132,7 @@ class Encoder {
   }
 
   _pushFloat (obj) {
-    const b2 = Buffer.allocUnsafe(2)
+    const b2 = new Uint8Array(2)
 
     if (utils.writeHalf(b2, obj)) {
       if (utils.parseHalf(b2) === obj) {
@@ -140,10 +140,12 @@ class Encoder {
       }
     }
 
-    const b4 = Buffer.allocUnsafe(4)
-    b4.writeFloatBE(obj, 0)
-    if (b4.readFloatBE(0) === obj) {
-      return this._pushUInt8(FLOAT) && this.push(b4)
+    const buf = new ArrayBuffer(4)
+    const b4 = new DataView(buf, buf.byteOffset, buf.byteLength)
+    b4.setFloat32(0, obj)
+
+    if (b4.getFloat32(0) === obj) {
+      return this._pushUInt8(FLOAT) && this.push(new Uint8Array(b4.buffer, b4.byteOffset, b4.byteLength))
     }
 
     return this._pushUInt8(DOUBLE) && this._pushDoubleBE(obj)
@@ -202,7 +204,7 @@ class Encoder {
   }
 
   _pushString (obj) {
-    const len = Buffer.byteLength(obj, 'utf8')
+    const len = uint8ArrayFromString(obj).length
     return this._pushInt(len, MT.UTF8_STRING) && this.pushWrite(obj, 5, len)
   }
 
@@ -277,7 +279,7 @@ class Encoder {
     if (str.length % 2) {
       str = '0' + str
     }
-    const buf = Buffer.from(str, 'hex')
+    const buf = uint8ArrayFromString(str, 'base16')
     return this._pushTag(tag) && this._pushBuffer(this, buf)
   }
 
@@ -404,7 +406,7 @@ class Encoder {
       case 'Array':
         return this._pushArray(this, obj)
       case 'Uint8Array':
-        return this._pushBuffer(this, Buffer.isBuffer(obj) ? obj : Buffer.from(obj))
+        return this._pushBuffer(this, obj)
       case 'Null':
         return this._pushUInt8(NULL)
       case 'Undefined':
@@ -454,7 +456,9 @@ class Encoder {
       size += resultLength[i]
     }
 
-    var res = Buffer.allocUnsafe(size)
+    const buffer = new ArrayBuffer(size)
+    var view = new DataView(buffer, buffer.byteOffset, buffer.byteLength)
+    var bytes = new Uint8Array(buffer, buffer.byteOffset, buffer.byteLength)
     var index = 0
     var length = 0
 
@@ -464,22 +468,22 @@ class Encoder {
 
       switch (resultMethod[i]) {
         case 0:
-          result[i].copy(res, index)
+          bytes.set(result[i].subarray(0, length), index)
           break
         case 1:
-          res.writeUInt8(result[i], index, true)
+          view.setUint8(index, result[i])
           break
         case 2:
-          res.writeUInt16BE(result[i], index, true)
+          view.setUint16(index, result[i])
           break
         case 3:
-          res.writeUInt32BE(result[i], index, true)
+          view.setUint32(index, result[i])
           break
         case 4:
-          res.writeDoubleBE(result[i], index, true)
+          view.setFloat64(index, result[i])
           break
         case 5:
-          res.write(result[i], index, length, 'utf8')
+          bytes.set(uint8ArrayFromString(result[i].substring(0, length), 'utf8'), index)
           break
         default:
           throw new Error('unkown method')
@@ -488,11 +492,9 @@ class Encoder {
       index += length
     }
 
-    var tmp = res
-
     this._reset()
 
-    return tmp
+    return bytes
   }
 
   _reset () {

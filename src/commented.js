@@ -1,11 +1,11 @@
 /* eslint-disable */
 'use strict'
 
-const { Buffer } = require('buffer')
 const stream = require('readable-stream')
 const Decoder = require('./decoder')
 const constants = require('./constants')
 const bignumber = require('bignumber.js').BigNumber
+const uint8ArrayToString = require('uint8arrays/to-string')
 
 const MT = constants.MT
 
@@ -79,11 +79,11 @@ class Commented extends stream.Transform {
    */
 
   /**
-   * Comment on an input Buffer or string, creating a string passed to the
+   * Comment on an input Uint8Array or string, creating a string passed to the
    * callback.  If callback not specified, a promise is returned.
    *
    * @static
-   * @param {(string|Buffer|NoFilter)} input
+   * @param {(string|Uint8Array|NoFilter)} input
    * @param {(string|object|function)} options
    * @param {number} [options.max_depth=10] - how many times to indent the dashes
    * @param {commentCallback=} cb
@@ -93,7 +93,7 @@ class Commented extends stream.Transform {
     if (input == null) {
       throw new Error('input required')
     }
-    let encoding = (typeof input === 'string') ? 'hex' : void 0
+    let encoding = (typeof input === 'string') ? 'base16' : void 0
     let max_depth = 10
     switch (typeof options) {
       case 'function':
@@ -122,13 +122,13 @@ class Commented extends stream.Transform {
     let p = null
     if (typeof cb === 'function') {
       d.on('end', function () {
-        return cb(null, bs.toString('utf8'))
+        return cb(null, uint8ArrayToString(bs))
       })
       d.on('error', cb)
     } else {
       p = new Promise(function (resolve, reject) {
         d.on('end', function () {
-          return resolve(bs.toString('utf8'))
+          return resolve(uint8ArrayToString(bs))
         })
         return d.on('error', reject)
       })
@@ -152,7 +152,7 @@ class Commented extends stream.Transform {
    */
   _on_read (buf) {
     this.all.write(buf)
-    const hex = buf.toString('hex')
+    const hex = uint8ArrayToString(buf, 'base16')
     this.push(new Array(this.depth + 1).join('  '))
     this.push(hex)
     let ind = (this.max_depth - this.depth) * 2
@@ -299,10 +299,10 @@ class Commented extends stream.Transform {
         this.push(JSON.stringify(val))
         this.push('\n')
       }
-    } else if (Buffer.isBuffer(val)) {
+    } else if (val instanceof Uint8Array) {
       this.depth--
       if (val.length > 0) {
-        this.push(val.toString('hex'))
+        this.push(uint8ArrayToString(val, 'base16'))
         this.push('\n')
       }
     } else if (val instanceof bignumber) {
@@ -327,7 +327,7 @@ class Commented extends stream.Transform {
    */
   _on_data () {
     this.push('0x')
-    this.push(this.all.read().toString('hex'))
+    this.push(uint8ArrayToString(this.all.read(), 'base16'))
     return this.push('\n')
   }
 }

@@ -1,9 +1,9 @@
 'use strict'
 
-const { Buffer } = require('buffer')
 const Bignum = require('bignumber.js').BigNumber
 const { URL } = require('iso-url')
-const expect = require('chai').expect
+const { expect } = require('aegir/utils/chai')
+const uint8ArrayFromString = require('uint8arrays/from-string')
 
 const cbor = require('../../')
 const constants = require('../../src/constants')
@@ -180,14 +180,14 @@ exports.good = [
       77            -- String, length: 23
         687474703a2f2f7777772e6578616d706c652e636f6d2f -- "http://www.example.com/"
 0xd82077687474703a2f2f7777772e6578616d706c652e636f6d2f`],
-  [Buffer.from(''), "h''", `
+  [uint8ArrayFromString(''), "h''", `
   40                -- Bytes, length: 0
 0x40`],
-  [Buffer.from('01020304', 'hex'), "h'01020304'", `
+  [uint8ArrayFromString('01020304', 'base16'), "h'01020304'", `
   44                -- Bytes, length: 4
     01020304        -- 01020304
 0x4401020304`],
-  [Buffer.from('000102030405060708090a0b0c0d0e0f101112131415161718', 'hex'), "h'000102030405060708090a0b0c0d0e0f101112131415161718'", `
+  [uint8ArrayFromString('000102030405060708090a0b0c0d0e0f101112131415161718', 'base16'), "h'000102030405060708090a0b0c0d0e0f101112131415161718'", `
   58                -- Bytes, length next 1 byte
     19              -- Bytes, length: 25
       000102030405060708090a0b0c0d0e0f101112131415161718 -- 000102030405060708090a0b0c0d0e0f101112131415161718
@@ -399,7 +399,7 @@ a1                                      # map(1)
                                        65 # text(5)
                                           776f726c64 # "world"
 0xa16131a16132a16133a16134a16135a16136a16137a16138a16139a1623130a1623131a1623132a26231336568656c6c6f62313465776f726c64`],
-  [Buffer.from('0102030405', 'hex'), "h'0102030405'", `
+  [uint8ArrayFromString('0102030405', 'base16'), "h'0102030405'", `
   45                -- Bytes, length: 5
     0102030405      -- 0102030405
 0x450102030405`],
@@ -562,10 +562,10 @@ a1                                      # map(1)
   c1                -- Tag #1
     00              -- 0
 0xc100`],
-  [Buffer.from(''), "h''", `
+  [uint8ArrayFromString(''), "h''", `
   40                -- Bytes, length: 0
 0x40`],
-  [Buffer.from([0, 1, 2, 3, 4]), "h'0001020304'", `
+  [Uint8Array.from([0, 1, 2, 3, 4]), "h'0001020304'", `
   45                -- Bytes, length: 5
     0001020304      -- 0001020304
 0x450001020304`],
@@ -680,7 +680,7 @@ a1                                      # map(1)
     0100            -- Tag #256
       01            -- 1
 0xd9010001`],
-  [Buffer.from([73, 32, 97, 109, 32, 49]), "h'4920616d2031'", `
+  [Uint8Array.from([73, 32, 97, 109, 32, 49]), "h'4920616d2031'", `
   46                -- bytes(6)
     4920616d2031    -- "I am 1"
 0x464920616d2031`]
@@ -712,14 +712,14 @@ exports.encodeGood = [
     01              -- [0], 1
     02              -- [1], 2
 0x820102`], // TODO: move back to good cases, once decode into set is figured out
-  [new Uint8Array(Buffer.from('')), "h''", `
+  [uint8ArrayFromString(''), "h''", `
   40                -- Bytes, length: 0
 0x40`],
-  [new Uint8Array(Buffer.from('01020304', 'hex')), "h'01020304'", `
+  [uint8ArrayFromString('01020304', 'base16'), "h'01020304'", `
   44                -- Bytes, length: 4
     01020304        -- 01020304
 0x4401020304`],
-  [new Uint8Array(Buffer.from('000102030405060708090a0b0c0d0e0f101112131415161718', 'hex')), "h'000102030405060708090a0b0c0d0e0f101112131415161718'", `
+  [uint8ArrayFromString('000102030405060708090a0b0c0d0e0f101112131415161718', 'base16'), "h'000102030405060708090a0b0c0d0e0f101112131415161718'", `
   58                -- Bytes, length next 1 byte
     19              -- Bytes, length: 25
       000102030405060708090a0b0c0d0e0f101112131415161718 -- 000102030405060708090a0b0c0d0e0f101112131415161718
@@ -735,12 +735,12 @@ exports.decodeGood = [
   f9                -- Float, next 2 bytes
     7bff            -- 65504
 0xf97bff`],
-  [new cbor.Tagged(23, Buffer.from('01020304', 'hex')), "23(h'01020304')", `
+  [new cbor.Tagged(23, uint8ArrayFromString('01020304', 'base16')), "23(h'01020304')", `
   d7                -- Tag #23
     44              -- Bytes, length: 4
       01020304      -- 01020304
 0xd74401020304`],
-  [new cbor.Tagged(24, Buffer.from('6449455446', 'hex')), "24(h'6449455446')", `
+  [new cbor.Tagged(24, uint8ArrayFromString('6449455446', 'base16')), "24(h'6449455446')", `
   d8                --  next 1 byte
     18              -- Tag #24
       45            -- Bytes, length: 5
@@ -826,7 +826,7 @@ exports.decodeGood = [
     fb              -- Float, next 8 bytes
       41d452d9ec200000 -- 1363896240.5
 0xc1fb41d452d9ec200000`],
-  [Buffer.from('0102030405', 'hex'), "(_ h'0102', h'030405')", `
+  [uint8ArrayFromString('0102030405', 'base16'), "(_ h'0102', h'030405')", `
   5f                -- Bytes (streaming)
     42              -- Bytes, length: 2
       0102          -- 0102
@@ -954,7 +954,7 @@ exports.decodeGood = [
           9f        -- Array (streaming)
             ff      -- BREAK
 0xd840d8409fff`],
-  [new cbor.Tagged(64, Buffer.from('aabbccddeeff99', 'hex')), "64((_ h'aabbccdd', h'eeff99'))", `
+  [new cbor.Tagged(64, uint8ArrayFromString('aabbccddeeff99', 'base16')), "64((_ h'aabbccdd', h'eeff99'))", `
   d8                --  next 1 byte
     40              -- Tag #64
       5f            -- Bytes (streaming)
@@ -1173,7 +1173,7 @@ exports.toBuffer = function (c) {
     c = c[2]
   }
   const match = c.match(HEX)
-  return Buffer.from(match[1], 'hex')
+  return uint8ArrayFromString(match[1], 'base16')
 }
 
 exports.toString = function (c) {
