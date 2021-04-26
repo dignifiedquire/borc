@@ -19,7 +19,7 @@ os:
   - osx
   - windows
 
-script: npx aegir test -t node --bail
+script: npx aegir test -t node --bail -- --exit
 
 jobs:
   include:
