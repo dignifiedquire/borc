@@ -19,7 +19,12 @@ os:
   - osx
   - windows
 
-script: npx aegir test -t node --bail -- --exit
+env:
+  # This stops Windows builds from hanging
+  # https://travis-ci.community/t/timeout-after-build-finished-and-succeeded/1336
+  - YARN_GPG=no
+
+script: npx aegir test -t node --bail
 
 jobs:
   include:
